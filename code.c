@@ -14,6 +14,38 @@ struct Task
     char status[20];
 };
 
+// int loadFromFile(struct Task *t)
+// {
+//     FILE *fp = fopen("task.txt", "r");
+//     if (!fp)
+//     {
+//         printf("No saved tasks found!\n");
+//         return 0;
+//     }
+
+//     int count = 0;
+
+//     while (!feof(fp))
+//     {
+//         fscanf(fp, "ID = %d\n", &t[count].id);
+//         fgets(t[count].title, sizeof(t[count].title), fp);
+//         fgets(t[count].description, sizeof(t[count].description), fp);
+//         fgets(t[count].startTime, sizeof(t[count].startTime), fp);
+//         fgets(t[count].endTime, sizeof(t[count].endTime), fp);
+//         fgets(t[count].dueDate, sizeof(t[count].dueDate), fp);
+//         fgets(t[count].priority, sizeof(t[count].priority), fp);
+//         fgets(t[count].status, sizeof(t[count].status), fp);
+
+//         char sep[10];
+//         fgets(sep, sizeof(sep), fp);
+
+//         count++;
+//     }
+
+//     fclose(fp);
+//     return count;
+// }
+
 int loadFromFile(struct Task *t)
 {
     FILE *fp = fopen("task.txt", "r");
@@ -24,20 +56,31 @@ int loadFromFile(struct Task *t)
     }
 
     int count = 0;
-
-    while (!feof(fp))
+    while (fscanf(fp, "ID = %d\n", &t[count].id) == 1)
     {
-        fscanf(fp, "ID = %d\n", &t[count].id);
         fgets(t[count].title, sizeof(t[count].title), fp);
+        t[count].title[strcspn(t[count].title, "\n")] = '\0';
+
         fgets(t[count].description, sizeof(t[count].description), fp);
+        t[count].description[strcspn(t[count].description, "\n")] = '\0';
+
         fgets(t[count].startTime, sizeof(t[count].startTime), fp);
+        t[count].startTime[strcspn(t[count].startTime, "\n")] = '\0';
+
         fgets(t[count].endTime, sizeof(t[count].endTime), fp);
+        t[count].endTime[strcspn(t[count].endTime, "\n")] = '\0';
+
         fgets(t[count].dueDate, sizeof(t[count].dueDate), fp);
+        t[count].dueDate[strcspn(t[count].dueDate, "\n")] = '\0';
+
         fgets(t[count].priority, sizeof(t[count].priority), fp);
+        t[count].priority[strcspn(t[count].priority, "\n")] = '\0';
+
         fgets(t[count].status, sizeof(t[count].status), fp);
+        t[count].status[strcspn(t[count].status, "\n")] = '\0';
 
         char sep[10];
-        fgets(sep, sizeof(sep), fp);
+        fgets(sep, sizeof(sep), fp); // skip "---"
 
         count++;
     }
@@ -274,16 +317,144 @@ void sortTask(struct Task *t, int n)
         }
     }
     printf("\n Tasks Sorted by Priority!\n");
-
-
 }
-
 
 // void updateTask()
 
-void updateTask(){
-    
+void updateTask(struct Task *t, int n)
+{
+    int index = -1;
+    int id;
+
+    printf("\nEnter Task ID to update: ");
+    scanf("%d", &id);
+    getchar();
+
+    for (int i = 0; i < n; i++)
+    {
+        if (t[i].id == id)
+        {
+            index = i;
+            break;
+        }
+    }
+
+    if (index == -1)
+    {
+        printf("\nTask Not Found!\n");
+        return;
+    }
+
+    printf("\nTask Found: ID=%d, Title=%s", t[index].id, t[index].title);
+
+    char ans[5];
+
+    // Update Title
+    printf("\nUpdate Title? (Y/N): ");
+    fgets(ans, sizeof(ans), stdin);
+    if (ans[0] == 'Y' || ans[0] == 'y')
+    {
+        printf("Enter New Title: ");
+        fgets(t[index].title, sizeof(t[index].title), stdin);
+    }
+
+    // Update End Date
+    printf("Update End Date? (Y/N): ");
+    fgets(ans, sizeof(ans), stdin);
+    if (ans[0] == 'Y' || ans[0] == 'y')
+    {
+        printf("Enter New End Date: ");
+        fgets(t[index].endTime, sizeof(t[index].endTime), stdin);
+    }
+
+    // Update Status
+    printf("Update Status? (Y/N): ");
+    fgets(ans, sizeof(ans), stdin);
+    if (ans[0] == 'Y' || ans[0] == 'y')
+    {
+        printf("Enter New Status (Pending/Completed): ");
+        fgets(t[index].status, sizeof(t[index].status), stdin);
+    }
+
+    // Save updated tasks back to file
+    FILE *fp = fopen("task.txt", "w");
+    if (!fp)
+    {
+        printf("Error opening file!\n");
+        return;
+    }
+
+    for (int i = 0; i < n; i++)
+    {
+        fprintf(fp, "ID = %d\n", t[i].id);
+        fprintf(fp, "Title = %s", t[i].title);
+        fprintf(fp, "Description = %s", t[i].description);
+        fprintf(fp, "Start = %s", t[i].startTime);
+        fprintf(fp, "End = %s", t[i].endTime);
+        fprintf(fp, "Due Date = %s", t[i].dueDate);
+        fprintf(fp, "Priority = %s", t[i].priority);
+        fprintf(fp, "Status = %s", t[i].status);
+        fprintf(fp, "---\n");
+    }
+
+    fclose(fp);
+    printf("\nTask Updated Successfully and saved to file!\n");
 }
+// delete tasks
+void deleteTask(struct Task *t, int *n)
+{
+    int id, index = -1;
+    printf("\nEnter Task ID to Delete: ");
+    scanf("%d", &id);
+
+    // Find the task index
+    for (int i = 0; i < *n; i++)
+    {
+        if (t[i].id == id)
+        {
+            index = i;
+            break;
+        }
+    }
+
+    if (index == -1)
+    {
+        printf("\n Task Not Found!\n");
+        return;
+    }
+
+    for (int i = index; i < *n - 1; i++)
+    {
+        t[i] = t[i + 1];
+    }
+
+    (*n)--;
+
+    FILE *fp = fopen("task.txt", "w");
+    if (!fp)
+    {
+        printf("\nError opening file!\n");
+        return;
+    }
+
+    for (int i = 0; i < *n; i++)
+    {
+        fprintf(fp, "ID = %d\n", t[i].id);
+        fprintf(fp, "Title = %s\n", t[i].title);
+        fprintf(fp, "Description = %s\n", t[i].description);
+        fprintf(fp, "Start = %s\n", t[i].startTime);
+        fprintf(fp, "End = %s\n", t[i].endTime);
+        fprintf(fp, "Due Date = %s\n", t[i].dueDate);
+        fprintf(fp, "Priority = %s\n", t[i].priority);
+        fprintf(fp, "Status = %s\n", t[i].status);
+        fprintf(fp, "---\n");
+    }
+
+    fclose(fp);
+
+    printf("\n Task Deleted Successfully!\n");
+}
+
 int main()
 {
     struct Task tasks[100];
@@ -297,9 +468,9 @@ int main()
         printf("[3] Search A Tasks\n");
         printf("[4] Sort All Tasks\n");
         printf("[5] Update Single Tasks\n");
-        printf("[6] Show Task Statistics\n");
-        printf("[7] Delete Tasks\n");
-        printf("[8] Exit\n");
+        // printf("[6] Show Task Statistics\n");
+        printf("[6] Delete Tasks\n");
+        printf("[7] Exit\n");
         printf("Choose option: ");
         scanf("%d", &choice);
 
@@ -317,17 +488,17 @@ int main()
         case 4:
             sortTask(tasks, n);
             break;
-            case 5:
-                updateTask();
-                break;
-            // case 6:
-            //     showTaskStatistics();
-            //     break;
-            // case 7:
-            //     deleteTask();
-            //     break;
-
         case 5:
+            updateTask(tasks, n);
+            break;
+        // case 6:
+        //     showTaskStatistics();
+        //     break;
+        case 6:
+            deleteTask(tasks, &n);
+            break;
+
+        case 7:
             return 0;
         default:
             printf("\n Invalid option! Try again.\n");

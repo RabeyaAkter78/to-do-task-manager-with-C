@@ -14,6 +14,38 @@ struct Task
     char status[20];
 };
 
+int loadFromFile(struct Task *t)
+{
+    FILE *fp = fopen("task.txt", "r");
+    if (!fp)
+    {
+        printf("No saved tasks found!\n");
+        return 0;
+    }
+
+    int count = 0;
+
+    while (!feof(fp))
+    {
+        fscanf(fp, "ID = %d\n", &t[count].id);
+        fgets(t[count].title, sizeof(t[count].title), fp);
+        fgets(t[count].description, sizeof(t[count].description), fp);
+        fgets(t[count].startTime, sizeof(t[count].startTime), fp);
+        fgets(t[count].endTime, sizeof(t[count].endTime), fp);
+        fgets(t[count].dueDate, sizeof(t[count].dueDate), fp);
+        fgets(t[count].priority, sizeof(t[count].priority), fp);
+        fgets(t[count].status, sizeof(t[count].status), fp);
+
+        char sep[10];
+        fgets(sep, sizeof(sep), fp);
+
+        count++;
+    }
+
+    fclose(fp);
+    return count;
+}
+
 void saveToFile(struct Task t)
 {
     FILE *fp = fopen("task.txt", "a");
@@ -34,60 +66,25 @@ void saveToFile(struct Task t)
     fprintf(fp, "---\n");
 
     fclose(fp);
-    printf("\n✅ Task successfully saved!\n");
-}
-
-// NEW FUNCTION: Load tasks from file into array
-void loadTasksFromFile(struct Task *t, int *n)
-{
-    FILE *fp = fopen("task.txt", "r");
-    if (fp == NULL)
-    {
-        *n = 0;
-        return;
-    }
-
-    char line[300];
-    *n = 0;
-
-    while (fgets(line, sizeof(line), fp))
-    {
-        if (sscanf(line, "ID = %d", &t[*n].id) == 1)
-        {
-            fgets(line, sizeof(line), fp);
-            sscanf(line, "Title = %[^\n]", t[*n].title);
-            
-            fgets(line, sizeof(line), fp);
-            sscanf(line, "Description = %[^\n]", t[*n].description);
-            
-            fgets(line, sizeof(line), fp);
-            sscanf(line, "Start = %[^\n]", t[*n].startTime);
-            
-            fgets(line, sizeof(line), fp);
-            sscanf(line, "End = %[^\n]", t[*n].endTime);
-            
-            fgets(line, sizeof(line), fp);
-            sscanf(line, "Due Date = %[^\n]", t[*n].dueDate);
-            
-            fgets(line, sizeof(line), fp);
-            sscanf(line, "Priority = %[^\n]", t[*n].priority);
-            
-            fgets(line, sizeof(line), fp);
-            sscanf(line, "Status = %[^\n]", t[*n].status);
-            
-            (*n)++;
-        }
-    }
-
-    fclose(fp);
+    printf("\n Task successfully saved!\n");
 }
 
 void addTask(struct Task *t, int *n)
 {
-    printf("\nEnter Task ID: ");
-    scanf("%d", &t[*n].id);
+    int newId;
+    printf("\n Enter Task ID: ");
+    scanf("%d", &newId);
     getchar();
 
+    for (int i = 0; i < *n; i++)
+    {
+        if (t[i].id == newId)
+        {
+            printf("\n Task ID already exists!\n");
+            return;
+        }
+    }
+    t[*n].id = newId;
     printf("Enter Title: ");
     fgets(t[*n].title, sizeof(t[*n].title), stdin);
     printf("Enter Description: ");
@@ -134,7 +131,10 @@ void viewAllTasks()
     fclose(fp);
 }
 
-void searchTask(struct Task *t, int n) {
+// Search a Task:
+
+void searchTask(struct Task *t, int n)
+{
     int id;
     char input[50];
     int found = 0;
@@ -144,96 +144,150 @@ void searchTask(struct Task *t, int n) {
     scanf("%d", &choice);
     getchar();
 
-    if (choice == 1) {
+    if (choice == 1)
+    {
         printf("Enter Task ID: ");
         scanf("%d", &id);
         getchar();
 
-        for (int i = 0; i < n; i++) {
-            if (t[i].id == id) {
+        for (int i = 0; i < n; i++)
+        {
+            if (t[i].id == id)
+            {
                 printf("\n---------- Task Found ----------\n");
-                printf("ID: %d\nTitle: %s\nDescription: %s\nDue: %s\nPriority: %s\nStatus: %s\n",
+                printf("ID: %d\nTitle: %sDescription: %sDue: %sPriority: %sStatus: %s\n",
                        t[i].id, t[i].title, t[i].description, t[i].dueDate, t[i].priority, t[i].status);
                 found = 1;
                 break;
             }
         }
     }
-    else if (choice == 2) {
+    else if (choice == 2)
+    {
         printf("Enter Task Title: ");
         fgets(input, sizeof(input), stdin);
         input[strcspn(input, "\n")] = '\0';
 
-        for (int i = 0; i < n; i++) {
-            char tempTitle[50];
-            strcpy(tempTitle, t[i].title);
-            tempTitle[strcspn(tempTitle, "\n")] = '\0';
-            
-            if (strstr(tempTitle, input) != NULL) {
+        for (int i = 0; i < n; i++)
+        {
+            // Trim newline from stored title
+            t[i].title[strcspn(t[i].title, "\n")] = '\0';
+            if (strstr(t[i].title, input) != NULL)
+            {
                 printf("\n---------- Task Found ----------\n");
-                printf("ID: %d\nTitle: %s\nDescription: %s\nDue: %s\nPriority: %s\nStatus: %s\n",
+                printf("ID: %d\nTitle: %sDescription: %sDue: %sPriority: %sStatus: %s\n",
                        t[i].id, t[i].title, t[i].description, t[i].dueDate, t[i].priority, t[i].status);
                 found = 1;
             }
         }
     }
-    else if (choice == 3) {
+    else if (choice == 3)
+    {
         printf("Enter Priority (Low/Med/High): ");
         fgets(input, sizeof(input), stdin);
         input[strcspn(input, "\n")] = '\0';
 
-        for (int i = 0; i < n; i++) {
-            char tempPriority[20];
-            strcpy(tempPriority, t[i].priority);
-            tempPriority[strcspn(tempPriority, "\n")] = '\0';
-            
-            if (strcasecmp(tempPriority, input) == 0) {
+        for (int i = 0; i < n; i++)
+        {
+            t[i].priority[strcspn(t[i].priority, "\n")] = '\0';
+            if (strcmp(t[i].priority, input) == 0)
+            {
                 printf("\n---------- Task Found ----------\n");
-                printf("ID: %d\nTitle: %s\nDescription: %s\nDue: %s\nPriority: %s\nStatus: %s\n",
+                printf("ID: %d\nTitle: %sDescription: %sDue: %sPriority: %sStatus: %s\n",
                        t[i].id, t[i].title, t[i].description, t[i].dueDate, t[i].priority, t[i].status);
                 found = 1;
             }
         }
     }
-    else {
+    else
+    {
         printf("\nInvalid choice!\n");
         return;
     }
 
-    if (!found) {
+    if (!found)
+    {
         printf("\nTask Not Found!\n");
         printf("\nSuggested Tasks:\n");
         int suggested = 0;
 
-        for (int i = 0; i < n && suggested < 5; i++) {
-            char tempPriority[20], tempStatus[20];
-            strcpy(tempPriority, t[i].priority);
-            strcpy(tempStatus, t[i].status);
-            tempPriority[strcspn(tempPriority, "\n")] = '\0';
-            tempStatus[strcspn(tempStatus, "\n")] = '\0';
+        for (int i = 0; i < n && suggested < 5; i++)
+        {
+            // Trim newlines
+            t[i].priority[strcspn(t[i].priority, "\n")] = '\0';
+            t[i].status[strcspn(t[i].status, "\n")] = '\0';
 
-            if ((strcasecmp(tempPriority, "High") == 0 || strcasecmp(tempPriority, "Med") == 0) &&
-                strcasecmp(tempStatus, "pending") == 0) {
+            if ((strcmp(t[i].priority, "High") == 0 || strcmp(t[i].priority, "Med") == 0) &&
+                strcmp(t[i].status, "pending") == 0)
+            {
                 printf("ID: %d | Title: %s | Priority: %s | Status: %s\n",
-                       t[i].id, t[i].title, tempPriority, tempStatus);
+                       t[i].id, t[i].title, t[i].priority, t[i].status);
                 suggested++;
             }
         }
 
-        if (suggested == 0) {
+        if (suggested == 0)
+        {
             printf("No pending high/medium-priority tasks found.\n");
         }
     }
 }
 
+// Sort All Tasks
+int getPriorityValue(char *priority)
+{
+    if (strncmp(priority, "High", 4) == 0)
+    {
+        return 3;
+    }
+    else if (strncmp(priority, "Med", 3) == 0)
+    {
+        return 2;
+    }
+    else
+    {
+        return 1;
+    }
+}
+
+void sortTask(struct Task *t, int n)
+{
+    struct Task tasks[100];
+    int totalTasks = loadFromFile(tasks);
+    if (n == 0)
+    {
+        printf("\n No saved tasks found!\n");
+        return;
+    }
+
+    struct Task temp;
+    for (int i = 0; i < n - 1; i++)
+    {
+        for (int j = i + 1; j < n; j++)
+        {
+            if (getPriorityValue(t[i].priority) < getPriorityValue(t[j].priority))
+            {
+                temp = tasks[i];
+                tasks[i] = tasks[j];
+                tasks[j] = temp;
+            }
+        }
+    }
+    printf("\n Tasks Sorted by Priority!\n");
+
+
+}
+
+
+// void updateTask()
+
+void updateTask(){
+    
+}
 int main()
 {
     struct Task tasks[100];
-    int n = 0, choice;
-
-    // Load existing tasks from file at startup
-    loadTasksFromFile(tasks, &n);
-    printf("Loaded %d tasks from file.\n", n);
+    int n = loadFromFile(tasks), choice;
 
     while (1)
     {
@@ -258,11 +312,22 @@ int main()
             viewAllTasks();
             break;
         case 3:
-            // Reload tasks before searching to ensure we have latest data
-            loadTasksFromFile(tasks, &n);
             searchTask(tasks, n);
             break;
-        case 8:
+        case 4:
+            sortTask(tasks, n);
+            break;
+            case 5:
+                updateTask();
+                break;
+            // case 6:
+            //     showTaskStatistics();
+            //     break;
+            // case 7:
+            //     deleteTask();
+            //     break;
+
+        case 5:
             return 0;
         default:
             printf("\n Invalid option! Try again.\n");

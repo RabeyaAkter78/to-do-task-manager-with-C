@@ -14,38 +14,6 @@ struct Task
     char status[20];
 };
 
-// int loadFromFile(struct Task *t)
-// {
-//     FILE *fp = fopen("task.txt", "r");
-//     if (!fp)
-//     {
-//         printf("No saved tasks found!\n");
-//         return 0;
-//     }
-
-//     int count = 0;
-
-//     while (!feof(fp))
-//     {
-//         fscanf(fp, "ID = %d\n", &t[count].id);
-//         fgets(t[count].title, sizeof(t[count].title), fp);
-//         fgets(t[count].description, sizeof(t[count].description), fp);
-//         fgets(t[count].startTime, sizeof(t[count].startTime), fp);
-//         fgets(t[count].endTime, sizeof(t[count].endTime), fp);
-//         fgets(t[count].dueDate, sizeof(t[count].dueDate), fp);
-//         fgets(t[count].priority, sizeof(t[count].priority), fp);
-//         fgets(t[count].status, sizeof(t[count].status), fp);
-
-//         char sep[10];
-//         fgets(sep, sizeof(sep), fp);
-
-//         count++;
-//     }
-
-//     fclose(fp);
-//     return count;
-// }
-
 int loadFromFile(struct Task *t)
 {
     FILE *fp = fopen("task.txt", "r");
@@ -114,20 +82,22 @@ void saveToFile(struct Task t)
 
 void addTask(struct Task *t, int *n)
 {
-    int newId;
-    printf("\n Enter Task ID: ");
-    scanf("%d", &newId);
-    getchar();
+    // int newId;
+    // printf("\n Enter Task ID: ");
+    // scanf("%d", &newId);
+    // getchar();
 
-    for (int i = 0; i < *n; i++)
-    {
-        if (t[i].id == newId)
-        {
-            printf("\n Task ID already exists!\n");
-            return;
-        }
-    }
-    t[*n].id = newId;
+    // for (int i = 0; i < *n; i++)
+    // {
+    //     if (t[i].id == newId)
+    //     {
+    //         printf("\n Task ID already exists!\n");
+    //         return;
+    //     }
+    // }
+
+    t[*n].id = (*n) + 1;
+    getchar();
     printf("Enter Title: ");
     fgets(t[*n].title, sizeof(t[*n].title), stdin);
     printf("Enter Description: ");
@@ -415,6 +385,7 @@ void deleteTask(struct Task *t, int *n)
             index = i;
             break;
         }
+        t[i].id = i + 1;
     }
 
     if (index == -1)
@@ -429,6 +400,11 @@ void deleteTask(struct Task *t, int *n)
     }
 
     (*n)--;
+
+    for (int i = 0; i < *n; i++)
+    {
+        t[i].id = i + 1;
+    }
 
     FILE *fp = fopen("task.txt", "w");
     if (!fp)
